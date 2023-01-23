@@ -1,21 +1,41 @@
-pub struct Config {
-    pub first_path: String,
-    pub second_path: String,
+use clap::{Parser, Subcommand};
+use std::path::PathBuf;
+/// A fictional versioning CLI
+#[derive(Debug, Parser)]
+#[command(name = "merger")]
+#[command(about = "A simple CLI to process images", long_about = None)]
+pub struct Cli {
+    #[command(subcommand)]
+    pub command: Commands,
 }
-impl Config {
-    pub fn new(args: &[String]) -> Result<Config, &str> {
-        if args.len() < 3 {
-            return Err("Not enough arguments");
-        }
 
-        let first_path = args[1].clone();
-        let second_path = args[2].clone();
+#[derive(Debug, Subcommand)]
+pub enum Commands {
+    /// Connects two images
+    #[command(arg_required_else_help = true)]
+    Merge {
+        /// First image path
+        #[arg(required = true)]
+        img1: PathBuf,
 
-        Ok({
-            Config {
-                first_path,
-                second_path,
-            }
-        })
-    }
+        /// Second image path
+        #[arg(required = true)]
+        img2: PathBuf,
+
+        /// Output file
+        #[arg(required = true)]
+        output: PathBuf,
+    },
+
+    /// Merge everything in folder
+    #[command(arg_required_else_help = true)]
+    MergeFolder {
+        /// Folder path
+        #[arg(required = true)]
+        path: PathBuf,
+
+        /// Output folder
+        #[arg(required = false, long, short)]
+        output: PathBuf,
+    },
 }

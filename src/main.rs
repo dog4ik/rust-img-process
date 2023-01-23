@@ -1,20 +1,16 @@
+use clap::Parser;
+use image_process::merge_folder;
 use image_process::merge_image;
-use image_process::Config;
-use std::env;
-use std::process;
-use std::time::Instant;
+use image_process::Cli;
+use image_process::Commands;
 fn main() {
-    let args: Vec<String> = env::args().collect();
-    let config = match Config::new(&args) {
-        Ok(res) => res,
-        Err(e) => {
-            println!("Error: {}", e);
-            process::exit(1)
+    let args = Cli::parse();
+    match args.command {
+        Commands::Merge { img1, img2, output } => {
+            merge_image(&img1, &img2, &output).expect("to merge");
+        }
+        Commands::MergeFolder { path, output } => {
+            merge_folder(&path, output).unwrap();
         }
     };
-    let start = Instant::now();
-    merge_image(&config.first_path, &config.second_path).unwrap();
-    let duration = start.elapsed();
-    println!("Finished creating image in {:?} from: ", duration);
-    println!("{} {}", config.first_path, config.second_path);
 }
