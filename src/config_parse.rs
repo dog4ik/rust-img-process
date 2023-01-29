@@ -1,6 +1,5 @@
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
-/// A fictional versioning CLI
 #[derive(Debug, Parser)]
 #[command(name = "merger")]
 #[command(about = "A simple CLI to process images", long_about = None)]
@@ -11,7 +10,7 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub enum Commands {
-    /// Connects two images
+    /// Merge two images
     #[command(arg_required_else_help = true)]
     Merge {
         /// First image path
@@ -37,5 +36,9 @@ pub enum Commands {
         /// Output folder
         #[arg(required = false, long, short)]
         output: PathBuf,
+
+        /// Concurrent
+        #[arg(required = false, short)]
+        concurrent: bool,
     },
 }

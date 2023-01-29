@@ -1,12 +1,32 @@
 use std::cmp;
+use std::thread::{spawn, JoinHandle};
 use std::{fs, path::PathBuf};
 
 use image::{open, GenericImage, ImageBuffer, RgbImage};
 
-const WIDTH: u32 = 512;
-const HEIGHT: u32 = 512;
-
+fn scan_dir(folder_path: &PathBuf) -> Result<Vec<PathBuf>, &str> {
+    if !folder_path.is_dir() {
+        return Err("Dir is not dir");
+    }
+    let mut path_list: Vec<PathBuf> = Vec::new();
+    for file in fs::read_dir(folder_path).expect("always to be dir") {
+        match file {
+            Ok(res) => {
+                let file_path = res.path();
+                let file_extention = file_path.extension().unwrap().to_str().unwrap();
+                if file_extention != "jpg" && file_extention != "png" {
+                    continue;
+                }
+                path_list.push(res.path());
+            }
+            Err(_) => continue,
+        };
+    }
+    Ok(path_list)
+}
 pub fn create_image() -> Result<(), image::ImageError> {
+    const WIDTH: u32 = 512;
+    const HEIGHT: u32 = 512;
     let img = ImageBuffer::from_fn(WIDTH, HEIGHT, |x, y| {
         if x % 2 == 0 && y % 2 == 0 {
             image::Rgb([255 as u8, 0, 0])
@@ -52,23 +72,7 @@ pub fn merge_image(
 }
 
 pub fn merge_folder(folder_path: &PathBuf, output: PathBuf) -> Result<(), &str> {
-    if !folder_path.is_dir() {
-        return Err("Dir is not dir");
-    }
-    let mut path_list: Vec<PathBuf> = Vec::new();
-    for file in fs::read_dir(folder_path).expect("always to be dir") {
-        match file {
-            Ok(res) => {
-                let file_path = res.path();
-                let file_extention = file_path.extension().unwrap().to_str().unwrap();
-                if file_extention != "jpg" && file_extention != "png" {
-                    continue;
-                }
-                path_list.push(res.path());
-            }
-            Err(_) => continue,
-        };
-    }
+    let path_list = scan_dir(&folder_path).unwrap();
     println!("{:?}", path_list);
     for [first_path, second_path] in path_list.array_windows().step_by(2) {
         let mut new_path = output.clone();
@@ -83,6 +87,38 @@ pub fn merge_folder(folder_path: &PathBuf, output: PathBuf) -> Result<(), &str> 
         new_path.push(PathBuf::from(new_name));
         println!("{:?} {:?}", first_path, second_path);
         merge_image(first_path, second_path, &new_path).unwrap();
+    }
+    Ok(())
+}
+
+pub fn merge_folder_concurrent(folder_path: &PathBuf, output: PathBuf) -> Result<(), &str> {
+    let path_list = scan_dir(&folder_path).unwrap();
+    println!("{:?}", path_list);
+    println!("merging mt");
+    let mut procss_vec: Vec<JoinHandle<_>> = vec![];
+
+    for [first_path, second_path] in path_list.array_windows().step_by(2) {
+        let output = output.clone();
+        let first_path = first_path.clone();
+        let second_path = second_path.clone();
+        let handle = spawn(move || {
+            let mut new_path = output;
+            let mut new_name = first_path
+                .file_stem()
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .to_string();
+            new_name.push_str("&");
+            new_name.push_str(second_path.file_name().unwrap().to_str().unwrap());
+            new_path.push(PathBuf::from(new_name));
+            println!("{:?} {:?}", first_path, second_path);
+            merge_image(&first_path, &second_path, &new_path).unwrap();
+        });
+        procss_vec.push(handle)
+    }
+    for handle in procss_vec {
+        handle.join().unwrap();
     }
     Ok(())
 }
