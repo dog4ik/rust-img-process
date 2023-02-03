@@ -88,6 +88,18 @@ pub fn merge_folder(folder_path: &PathBuf, output: PathBuf) -> Result<(), &str> 
         println!("{:?} {:?}", first_path, second_path);
         merge_image(first_path, second_path, &new_path).unwrap();
     }
+    let path_list_len = path_list.len();
+    let last_item = &path_list[path_list_len - 1];
+    let destination = PathBuf::new()
+        .join(output)
+        .join(last_item.file_name().unwrap());
+    if path_list_len % 2 != 0 {
+        println!(
+            "{} didn't get pair and will be just copied",
+            last_item.file_name().unwrap().to_str().unwrap()
+        );
+        fs::copy(last_item.to_str().unwrap(), destination).unwrap();
+    }
     Ok(())
 }
 
@@ -116,6 +128,18 @@ pub fn merge_folder_concurrent(folder_path: &PathBuf, output: PathBuf) -> Result
             merge_image(&first_path, &second_path, &new_path).unwrap();
         });
         procss_vec.push(handle)
+    }
+    let path_list_len = path_list.len();
+    let last_item = &path_list[path_list_len - 1];
+    let destination = PathBuf::new()
+        .join(output)
+        .join(last_item.file_name().unwrap());
+    if path_list_len % 2 != 0 {
+        println!(
+            "{} didn't get pair and will be just copied",
+            last_item.file_name().unwrap().to_str().unwrap()
+        );
+        fs::copy(last_item, destination).unwrap();
     }
     for handle in procss_vec {
         handle.join().unwrap();
