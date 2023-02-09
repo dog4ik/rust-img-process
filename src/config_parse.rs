@@ -41,4 +41,16 @@ pub enum Commands {
         #[arg(required = false, short)]
         concurrent: bool,
     },
+
+    /// Merge everything in folder recursive
+    #[command(arg_required_else_help = true)]
+    MergeFolderRecursive {
+        /// Folder path
+        #[arg(required = true)]
+        path: PathBuf,
+
+        /// Output folder
+        #[arg(required = false, long, short)]
+        output: PathBuf,
+    },
 }

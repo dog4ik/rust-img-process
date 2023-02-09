@@ -4,6 +4,45 @@ use std::{fs, path::PathBuf};
 
 use image::{open, GenericImage, ImageBuffer, RgbImage};
 
+fn walk_recursive(path_buf: &PathBuf) -> Vec<PathBuf> {
+    let mut local_paths: Vec<PathBuf> = vec![];
+    let dir = fs::read_dir(&path_buf).unwrap();
+    for file in dir {
+        let file = file.unwrap().path();
+
+        if file.is_file() {
+            println!("{:?}", file);
+            if file.extension().unwrap() == "jpg" {
+                local_paths.push(file.clone());
+            }
+        }
+        if file.is_dir() {
+            let mut new_path = PathBuf::new();
+            new_path.push(path_buf);
+            new_path.push(file);
+            local_paths.append(walk_recursive(&new_path).as_mut());
+        }
+    }
+    return local_paths;
+}
+pub fn merge_dir_recursive(path: PathBuf, output: PathBuf) {
+    let paths_list = walk_recursive(&path);
+    for [first_path, second_path] in paths_list.array_windows().step_by(2) {
+        let mut new_path = output.clone();
+        let mut new_name = first_path
+            .file_stem()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+        new_name.push_str("&");
+        new_name.push_str(second_path.file_name().unwrap().to_str().unwrap());
+        new_path.push(PathBuf::from(new_name));
+        println!("{:?} {:?}", first_path, second_path);
+        merge_image(first_path, second_path, &new_path).unwrap();
+    }
+}
+
 fn scan_dir(folder_path: &PathBuf) -> Result<Vec<PathBuf>, &str> {
     if !folder_path.is_dir() {
         return Err("Dir is not dir");

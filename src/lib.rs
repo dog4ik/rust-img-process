@@ -5,6 +5,7 @@ mod merge;
 pub use config_parse::Cli;
 pub use config_parse::Commands;
 pub use merge::create_image;
+pub use merge::merge_dir_recursive;
 pub use merge::merge_folder;
 pub use merge::merge_folder_concurrent;
 pub use merge::merge_image;

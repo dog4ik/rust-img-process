@@ -1,6 +1,7 @@
 use std::time::Instant;
 
 use clap::Parser;
+use image_process::merge_dir_recursive;
 use image_process::merge_folder;
 use image_process::merge_folder_concurrent;
 use image_process::merge_image;
@@ -23,6 +24,9 @@ fn main() {
             } else {
                 merge_folder(&path, output).unwrap();
             }
+        }
+        Commands::MergeFolderRecursive { path, output } => {
+            merge_dir_recursive(path, output);
         }
     };
     let duration = start.elapsed();
